@@ -8,19 +8,24 @@ maptilerClient.config.apiKey = mapApi;
 
 module.exports.index = async (req, res) => {
   searchListing = req.query.search;
-  if (!searchListing) {
-    const allListings = await Listing.find({});
-    res.render("listings/index.ejs", { allListings });
-  } else {
-    allListings = await Listing.find({ country: searchListing });
-    if (allListings == undefined || allListings == "") {
-      req.flash("error", "Listing does not exist");
-      return res.redirect("/listings");
+  let allListings;
+  try {
+    if (searchListing) {
+      allListings = await Listing.find({ country: searchListing });
+      if (allListings.length === 0) {
+        req.flash("error", "No listings found for the specified country");
+        return res.redirect("/listings");
+      } else {
+        console.log(allListings);
+        req.flash("success", `Listings from ${searchListing}`);
+        res.render("listings/index.ejs", { allListings });
+      }
     } else {
-      console.log(allListings);
-      req.flash("success", `Listings from ${searchListing}`);
+      allListings = await Listing.find({});
       res.render("listings/index.ejs", { allListings });
     }
+  } catch (e) {
+    req.flash("error", "An error occured while fetching listings");
   }
 };
 
