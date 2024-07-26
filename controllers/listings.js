@@ -7,8 +7,15 @@ maptilerClient.config.fetch = fetch;
 maptilerClient.config.apiKey = mapApi;
 
 module.exports.index = async (req, res) => {
-  const allListings = await Listing.find({});
-  res.render("listings/index.ejs", { allListings });
+  searchListing = req.query.search;
+  if (!searchListing) {
+    const allListings = await Listing.find({});
+    res.render("listings/index.ejs", { allListings });
+  } else {
+    allListings = await Listing.find({ country: searchListing });
+    console.log(allListings)
+    res.render("listings/index.ejs", { allListings });
+  }
 };
 
 module.exports.renderNewForm = (req, res) => {
