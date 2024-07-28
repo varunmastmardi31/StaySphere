@@ -13,7 +13,12 @@ module.exports.index = async (req, res) => {
     res.render("listings/index.ejs", { allListings });
   } else {
     allListings = await Listing.find({ country: searchListing });
-    console.log(allListings)
+    console.log(allListings.length);
+    if (!allListings || allListings.length === 0) {
+      req.flash("error", "listing is not available");
+      return res.redirect("/listings");
+    }
+  
     res.render("listings/index.ejs", { allListings });
   }
 };
