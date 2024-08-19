@@ -1,4 +1,4 @@
-if(process.env.NODE_ENV !="production"){
+if (process.env.NODE_ENV != "production") {
   require("dotenv").config();
 }
 
@@ -11,17 +11,33 @@ const ejsMate = require("ejs-mate");
 const ExpressError = require("./utils/ExpressError.js");
 
 const session = require("express-session");
+const MongoStore = require("connect-mongo");
+
 const flash = require("connect-flash");
 const passport = require("passport");
 const LocalStrategy = require("passport-local");
 const User = require("./models/user.js");
 
+const dbUrl = process.env.ATLASDB_URL;
 
 const listingRouter = require("./routes/listing.js");
 const reviewRouter = require("./routes/review.js");
 const userRouter = require("./routes/user.js");
 
+const store = MongoStore.create({
+  mongoUrl: dbUrl,
+  crypto: {
+    secret: "thisisasecretcode",
+  },
+  touchAfter: 24 * 3600,
+});
+
+store.on("error", () => {
+  console.log("Error at Session Store", err);
+});
+
 const sessionOptions = {
+  store,
   secret: "mysupersecretcode",
   resave: false,
   saveUninitialized: true,
@@ -40,10 +56,10 @@ app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
 app.engine("ejs", ejsMate);
 
-const MONGO_ULR = "mongodb://127.0.0.1:27017/staysphere";
+// const MONGO_ULR = "mongodb://127.0.0.1:27017/staysphere";
 
 async function main() {
-  await mongoose.connect(MONGO_ULR);
+  await mongoose.connect(dbUrl);
 }
 
 main()
@@ -54,18 +70,15 @@ main()
     console.log(err);
   });
 
-
 //Home Route
 
 // app.get("/", (req, res) => {
 //   res.send("Hii I am Root");
 // });
 
-
 // session and flash
 app.use(session(sessionOptions));
 app.use(flash());
-
 
 // passport middleware
 app.use(passport.initialize());
@@ -75,7 +88,6 @@ passport.use(new LocalStrategy(User.authenticate()));
 passport.serializeUser(User.serializeUser());
 passport.deserializeUser(User.deserializeUser());
 
-
 // flash middleware
 app.use((req, res, next) => {
   res.locals.success = req.flash("success");
@@ -84,14 +96,11 @@ app.use((req, res, next) => {
   next();
 });
 
-
-
 // Router Path
 
 app.use("/listings", listingRouter);
 app.use("/listings/:id/reviews", reviewRouter);
 app.use("/", userRouter);
-
 
 // MiddleWare If the Page Does not exits
 app.all("*", (req, res, next) => {

@@ -8,24 +8,18 @@ maptilerClient.config.apiKey = mapApi;
 
 module.exports.index = async (req, res) => {
   searchListing = req.query.search;
-  let allListings;
-  try {
-    if (searchListing) {
-      allListings = await Listing.find({ country: searchListing });
-      if (allListings.length === 0) {
-        req.flash("error", "No listings found for the specified country");
-        return res.redirect("/listings");
-      } else {
-        console.log(allListings);
-        req.flash("success", `Listings from ${searchListing}`);
-        res.render("listings/index.ejs", { allListings });
-      }
-    } else {
-      allListings = await Listing.find({});
-      res.render("listings/index.ejs", { allListings });
+  if (!searchListing || searchListing == "" || searchListing == undefined) {
+    const allListings = await Listing.find({});
+    res.render("listings/index.ejs", { allListings });
+  } else {
+    allListings = await Listing.find({ country: searchListing.toUpperCase() });
+    if (!allListings || allListings.length === 0) {
+      req.flash("error", "listing is not available");
+      return res.redirect("/listings");
     }
-  } catch (e) {
-    req.flash("error", "An error occured while fetching listings");
+    if (allListings.length > 0) {
+      res.render("listings/search.ejs", { allListings });
+    }
   }
 };
 
@@ -53,6 +47,7 @@ module.exports.createListing = async (req, res, next) => {
   let filename = req.file.filename;
   const newListing = new Listing(req.body.listing);
   newListing.owner = req.user._id;
+  newListing.country = newListing.country.toUpperCase();
   newListing.image = { url, filename };
   newListing.geometry = result.features[0].geometry;
   let savedListing = await newListing.save();

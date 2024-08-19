@@ -135,7 +135,7 @@
             class="starability-result card-text mb-3"
             data-rating="<%= review.rating %>"
           ></p>
-          <% if (currUser) { %>
+          <% if (currUser && currUser._id.equals(review.author._id)) { %>
           <form
             method="post"
             action="/listings/<%=listing._id%>/reviews/<%=review._id%>?_method=DELETE"
